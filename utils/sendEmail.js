@@ -4,20 +4,21 @@ const sendEmail = async (subject, message, send_to, sent_from, reply_to) => {
   const transporter = nodeMailer.createTransport({
     host: process.env.EMAIL_HOST,
     port: 587,
+    secure: false,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
     tls: {
-      rejectUnauthorized: false,
+      ciphers: "SSLv3",
     },
   });
 
-  // options for sending email from args
+  // Ensure 'from' address is the authenticated user to avoid SendAsDenied error
   const options = {
-    from: sent_from,
+    from: `"InTrack" <${process.env.EMAIL_USER}>`, // Use the authenticated sender's address
     to: send_to,
-    replyTo: reply_to,
+    replyTo: reply_to ? reply_to : process.env.EMAIL_USER, // Fallback to sender if replyTo is not provided
     subject: subject,
     html: message,
   };
@@ -25,9 +26,9 @@ const sendEmail = async (subject, message, send_to, sent_from, reply_to) => {
   // send email
   transporter.sendMail(options, function (err, info) {
     if (err) {
-      console.log(err);
+      console.error("Failed to send email:", err);
     } else {
-      console.log(info);
+      console.log("Email sent:", info);
     }
   });
 };
